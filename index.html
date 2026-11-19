@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NA Video Call</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-container">
+    <!-- Login / Signup Screen -->
+    <section id="auth-section" class="card">
+      <h1>NA Video Call</h1>
+      <p class="subtitle">தொடர உங்கள் மின்னஞ்சல் மற்றும் கடவுச்சொல்லை உள்ளிடவும்</p>
+
+      <div class="tab-row">
+        <button type="button" id="login-tab" class="tab-btn active">Login</button>
+        <button type="button" id="signup-tab" class="tab-btn">Signup</button>
+      </div>
+
+      <form id="auth-form">
+        <label for="email">மின்னஞ்சல் (Email)</label>
+        <input type="email" id="email" placeholder="example@gmail.com" required />
+
+        <label for="password">கடவுச்சொல் (Password)</label>
+        <input type="password" id="password" placeholder="குறைந்தது 6 எழுத்துகள்" required />
+
+        <button type="submit" id="auth-submit-btn" class="primary-btn">Login</button>
+      </form>
+
+      <p id="auth-message" class="status-msg"></p>
+    </section>
+
+    <!-- Room Dashboard Screen -->
+    <section id="room-section" class="card hidden">
+      <div class="top-bar">
+        <div>
+          <h2>NA Video Call</h2>
+          <p id="current-user-email" class="small-text"></p>
+        </div>
+        <button type="button" id="logout-btn" class="danger-btn">Logout</button>
+      </div>
+
+      <div class="box">
+        <h3>புதிய Room உருவாக்க (Create Room)</h3>
+        <button type="button" id="create-room-btn" class="primary-btn">Create Room</button>
+        <div id="created-room-info" class="room-box hidden">
+          <span>உங்கள் Room ID:</span>
+          <strong id="created-room-id"></strong>
+          <button type="button" id="copy-room-btn" class="secondary-btn">Copy ID</button>
+        </div>
+      </div>
+
+      <div class="box">
+        <h3>ஏற்கனவே உள்ள Room-ல் இணைய (Join Room)</h3>
+        <label for="join-room-input">Room ID உள்ளிடவும்</label>
+        <input type="text" id="join-room-input" placeholder="Room ID இங்கே போடவும்" />
+        <button type="button" id="join-room-btn" class="primary-btn">Join Room</button>
+      </div>
+
+      <p id="room-message" class="status-msg"></p>
+    </section>
+
+    <!-- Video Call Screen -->
+    <section id="call-section" class="card hidden">
+      <div class="call-header">
+        <span>Room: <strong id="active-room-id"></strong></span>
+        <span id="call-status" class="small-text">இணைகிறது...</span>
+      </div>
+
+      <div class="video-grid">
+        <div class="video-card">
+          <span class="video-label">உங்கள் வீடியோ (Local)</span>
+          <video id="local-video" autoplay playsinline muted></video>
+        </div>
+        <div class="video-card">
+          <span class="video-label">எதிர்முனை வீடியோ (Remote)</span>
+          <video id="remote-video" autoplay playsinline></video>
+        </div>
+      </div>
+
+      <div class="controls-row">
+        <button type="button" id="toggle-mic-btn" class="secondary-btn">Mic Off</button>
+        <button type="button" id="toggle-cam-btn" class="secondary-btn">Camera Off</button>
+        <button type="button" id="hangup-btn" class="danger-btn">அழைப்பை முடி (Leave)</button>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
