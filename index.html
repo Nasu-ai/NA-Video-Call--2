@@ -82,7 +82,18 @@
       <div class="controls-row">
         <button type="button" id="toggle-mic-btn" class="secondary-btn">Mic Off</button>
         <button type="button" id="toggle-cam-btn" class="secondary-btn">Camera Off</button>
-        <button type="button" id="hangup-btn" class="danger-btn">அழைப்பை முடி (Leave)</button>
+        <button type="button" id="switch-cam-btn" class="secondary-btn full-span">Switch Camera (Front/Back)</button>
+        <button type="button" id="hangup-btn" class="danger-btn full-span">அழைப்பை முடி (Leave)</button>
+      </div>
+
+      <!-- Chat Box -->
+      <div class="chat-box">
+        <h3>அறை குறுஞ்செய்தி (Chat)</h3>
+        <div id="chat-messages" class="chat-messages"></div>
+        <form id="chat-form" class="chat-form">
+          <input type="text" id="chat-input" placeholder="செய்தி எழுதவும்..." autocomplete="off" />
+          <button type="submit" id="send-chat-btn" class="primary-btn chat-send-btn">அனுப்பு</button>
+        </form>
       </div>
     </section>
   </div>
