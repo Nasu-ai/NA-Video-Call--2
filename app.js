@@ -16,7 +16,9 @@ import {
   collection,
   addDoc,
   onSnapshot,
-  getDocs
+  getDocs,
+  query,
+  orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -64,13 +66,19 @@ const localVideo = document.getElementById("local-video");
 const remoteVideo = document.getElementById("remote-video");
 const toggleMicBtn = document.getElementById("toggle-mic-btn");
 const toggleCamBtn = document.getElementById("toggle-cam-btn");
+const switchCamBtn = document.getElementById("switch-cam-btn");
 const hangupBtn = document.getElementById("hangup-btn");
+
+const chatMessagesEl = document.getElementById("chat-messages");
+const chatForm = document.getElementById("chat-form");
+const chatInput = document.getElementById("chat-input");
 
 let isSignupMode = false;
 let localStream = null;
 let remoteStream = null;
 let peerConnection = null;
 let currentRoomId = null;
+let currentFacingMode = "user"; // "user" = முன் கேமரா, "environment" = பின் கேமரா
 let unsubscribers = [];
 
 loginTab.addEventListener("click", () => {
@@ -127,16 +135,101 @@ logoutBtn.addEventListener("click", async () => {
   await signOut(auth);
 });
 
-async function startMedia() {
+async function startMedia(facingMode = "user") {
+  currentFacingMode = facingMode;
   localStream = await navigator.mediaDevices.getUserMedia({
-    video: true,
+    video: { facingMode: currentFacingMode },
     audio: true
   });
   remoteStream = new MediaStream();
 
   localVideo.srcObject = localStream;
   remoteVideo.srcObject = remoteStream;
+  toggleMicBtn.textContent = "Mic Off";
+  toggleCamBtn.textContent = "Camera Off";
 }
+
+// முன் / பின் கேமரா மாற்றும் வசதி (Switch Camera)
+switchCamBtn.addEventListener("click", async () => {
+  if (!localStream || !peerConnection) return;
+
+  const nextFacingMode = currentFacingMode === "user" ? "environment" : "user";
+  try {
+    const newStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: nextFacingMode },
+      audio: false
+    });
+    const newVideoTrack = newStream.getVideoTracks()[0];
+
+    const sender = peerConnection.getSenders().find((s) => s.track && s.track.kind === "video");
+    if (sender && newVideoTrack) {
+      await sender.replaceTrack(newVideoTrack);
+    }
+
+    const oldVideoTrack = localStream.getVideoTracks()[0];
+    if (oldVideoTrack) {
+      oldVideoTrack.stop();
+      localStream.removeTrack(oldVideoTrack);
+    }
+
+    localStream.addTrack(newVideoTrack);
+    localVideo.srcObject = localStream;
+    currentFacingMode = nextFacingMode;
+    toggleCamBtn.textContent = "Camera Off";
+    callStatus.textContent = nextFacingMode === "environment" ? "பின் கேமரா (Back)" : "முன் கேமரா (Front)";
+  } catch (error) {
+    callStatus.textContent = "கேமரா மாற்ற முடியவில்லை: " + error.message;
+  }
+});
+
+// அறை குறுஞ்செய்திகளைக் கேட்கும் Listener (Real-Time Chat)
+function listenToChat(roomId) {
+  chatMessagesEl.innerHTML = "";
+  const messagesCol = collection(db, "rooms", roomId, "messages");
+  const q = query(messagesCol, orderBy("createdAt", "asc"));
+
+  const unsubChat = onSnapshot(q, (snapshot) => {
+    chatMessagesEl.innerHTML = "";
+    snapshot.forEach((docSnap) => {
+      const msg = docSnap.data();
+      const div = document.createElement("div");
+      const isOwn = auth.currentUser && msg.senderId === auth.currentUser.uid;
+      div.className = isOwn ? "chat-msg own" : "chat-msg";
+
+      const senderSpan = document.createElement("span");
+      senderSpan.className = "chat-sender";
+      senderSpan.textContent = isOwn ? "நீங்கள்" : (msg.senderEmail || "பயனர்");
+
+      const textNode = document.createTextNode(msg.text || "");
+      div.appendChild(senderSpan);
+      div.appendChild(textNode);
+      chatMessagesEl.appendChild(div);
+    });
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  });
+
+  unsubscribers.push(unsubChat);
+}
+
+// குறுஞ்செய்தி அனுப்புதல்
+chatForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const text = chatInput.value.trim();
+  if (!text || !currentRoomId || !auth.currentUser) return;
+
+  chatInput.value = "";
+  try {
+    const messagesCol = collection(db, "rooms", currentRoomId, "messages");
+    await addDoc(messagesCol, {
+      text,
+      senderId: auth.currentUser.uid,
+      senderEmail: auth.currentUser.email,
+      createdAt: Date.now()
+    });
+  } catch (error) {
+    callStatus.textContent = "செய்தி அனுப்ப முடியவில்லை: " + error.message;
+  }
+});
 
 function generateRoomId() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -145,7 +238,7 @@ function generateRoomId() {
 createRoomBtn.addEventListener("click", async () => {
   roomMessage.textContent = "கேமரா மற்றும் மைக் அனுமதி கேட்கப்படுகிறது...";
   try {
-    await startMedia();
+    await startMedia("user");
 
     const roomId = generateRoomId();
     currentRoomId = roomId;
@@ -191,6 +284,8 @@ createRoomBtn.addEventListener("click", async () => {
 
     roomSection.classList.add("hidden");
     callSection.classList.remove("hidden");
+
+    listenToChat(roomId);
 
     const unsubRoom = onSnapshot(roomRef, async (snapshot) => {
       const data = snapshot.data();
@@ -241,7 +336,7 @@ joinRoomBtn.addEventListener("click", async () => {
       return;
     }
 
-    await startMedia();
+    await startMedia("user");
     currentRoomId = roomId;
 
     const callerCandidatesCol = collection(roomRef, "callerCandidates");
@@ -294,6 +389,8 @@ joinRoomBtn.addEventListener("click", async () => {
     callStatus.textContent = "இணைக்கப்பட்டது!";
     roomSection.classList.add("hidden");
     callSection.classList.remove("hidden");
+
+    listenToChat(roomId);
   } catch (error) {
     roomMessage.textContent = "பிழை: " + error.message;
   }
@@ -340,10 +437,15 @@ async function cleanupCall() {
 
   localVideo.srcObject = null;
   remoteVideo.srcObject = null;
+  chatMessagesEl.innerHTML = "";
 
   if (currentRoomId) {
     try {
       const roomRef = doc(db, "rooms", currentRoomId);
+
+      const messageDocs = await getDocs(collection(roomRef, "messages"));
+      for (const d of messageDocs.docs) await deleteDoc(d.ref);
+
       const callerDocs = await getDocs(collection(roomRef, "callerCandidates"));
       for (const d of callerDocs.docs) await deleteDoc(d.ref);
 
@@ -356,4 +458,4 @@ async function cleanupCall() {
     }
     currentRoomId = null;
   }
-      }
+}
