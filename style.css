@@ -200,8 +200,65 @@ video {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+  margin-bottom: 16px;
 }
 
-#hangup-btn {
+.full-span {
   grid-column: 1 / -1;
+}
+
+.chat-box {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.chat-messages {
+  max-height: 180px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-right: 4px;
+}
+
+.chat-msg {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.chat-msg.own {
+  background: #1d4ed8;
+  border-color: #2563eb;
+  align-self: flex-end;
+}
+
+.chat-sender {
+  display: block;
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-bottom: 2px;
+}
+
+.chat-form {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+
+.chat-form input {
+  flex: 1;
+}
+
+.chat-send-btn {
+  width: auto;
+  margin-top: 0;
+  white-space: nowrap;
 }
